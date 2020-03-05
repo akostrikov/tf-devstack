@@ -15,20 +15,23 @@ source "/home/$SUDO_USER/rhosp-environment.sh"
 cd $my_dir
 
 # collect MAC addresses of overcloud machines
+# akostrikov get macs by names
 function get_macs() {
-  local type=$1
-  truncate -s 0 /tmp/nodes-$type.txt
-  virsh domiflist rhosp13-overcloud-$type | awk '$3 ~ "prov" {print $5};'
+  local name=$1
+  truncate -s 0 /tmp/nodes-$name.txt
+  virsh domiflist $name | awk '$3 ~ "prov" {print $5};'
 }
 
+# akostrikov get ips by names
 function get_vbmc_ip() {
-  local type=$1
-  vbmc list | grep rhosp13-overcloud-$type | awk -F\| '{print $4}'
+  local name=$1
+  vbmc list | grep $name | awk -F\| '{print $4}'
 }
 
+# akostrikov get ports by names
 function get_vbmc_port() {
-  local type=$1
-  vbmc list | grep rhosp13-overcloud-$type | awk -F\| '{print $5}'
+  local name=$1
+  vbmc list | grep $name | awk -F\| '{print $5}'
 }
 
 
@@ -69,7 +72,8 @@ declare -A longname=( ["cont"]="controller" ["compute"]="compute" ["ctrlcont"]="
 unset vbmc_ip
 unset vbmc_port
 unset mac
-for node in 'cont' 'compute' 'ctrlcont'; do
+
+for node in $overcloud_cont_instance $overcloud_compute_instance $overcloud_ctrlcont_instance; do
   vbmc_ip=$(get_vbmc_ip $node)
   vbmc_port=$(get_vbmc_port $node)
   mac=$(get_macs $node)
@@ -90,5 +94,6 @@ mv instackenv.json /home/$SUDO_USER/
 # check this json (it's optional)
 #curl --silent -O https://raw.githubusercontent.com/rthallisey/clapper/master/instackenv-validator.py
 #python instackenv-validator.py -f ~/instackenv.json
+
 
 

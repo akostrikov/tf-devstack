@@ -80,18 +80,19 @@ EOF
 }
 
 function delete_network() {
-  local type="$1"
-  local network_name=`get_network_name $type`
+  local network_name="$1"
+  # local network_name=`get_network_name $type`
   virsh net-destroy $network_name 2> /dev/null || true
   virsh net-undefine $network_name 2> /dev/null || true
 }
 
 function create_network() {
   local type="$1"
+  local network_name="$2"
 
-  delete_network $type
+  delete_network $network_name
 
-  local network_name=`get_network_name $type`
+  #local network_name=`get_network_name $type`
   local fxml=`build_network_xml $type $network_name`
   virsh net-define $fxml
   rm $fxml
@@ -386,6 +387,7 @@ function delete_vbmc() {
   call_vbmc delete $domain || true
 }
 
+# vbmc running does not mean it is started
 function start_vbmc() {
   local port=$1
   local domain=$2
@@ -409,4 +411,6 @@ function start_vbmc() {
     # delete and try re-create
     delete_vbmc $domain
   done
+  virsh start $domain
 }
+

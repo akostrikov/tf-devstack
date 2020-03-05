@@ -10,6 +10,7 @@ my_file="$(readlink -e "$0")"
 my_dir="$(dirname $my_file)"
 
 
+# if no - we should 
 source "/home/$SUDO_USER/rhosp-environment.sh"
 source "$my_dir/virsh_functions"
 
@@ -22,23 +23,24 @@ for ip in $overcloud_cont_prov_ip $overcloud_compute_prov_ip $overcloud_ctrlcont
     ssh -T $ssh_opts stack@${ip} "sudo subscription-manager unregister"
 done
 
-delete_network management
-delete_network provisioning
-#delete_network external
+delete_domains $overcloud_cont_instance
+delete_domains $overcloud_compute_instance
+delete_domains $overcloud_ctrlcont_instance
+
+delete_domains $undercloud_vmname
+
+delete_volume $undercloud_vm_volume $poolname
+
+delete_volume "$overcloud_cont_instance.qcow2" $poolname
+delete_volume "$overcloud_compute_instance.qcow2" $poolname
+delete_volume "$overcloud_ctrlcont_instance.qcow2" $poolname
 
 delete_network_dhcp $NET_NAME_MGMT
 delete_network_dhcp $NET_NAME_PROV
 
-delete_domains rhosp13-overcloud
+virsh pool-destroy $poolname
+virsh pool-undefine $poolname
 
-vol_path=$(get_pool_path $poolname)
+rm -rf "/home/$SUDO_USER/rhosp-environment.sh" "/home/$SUDO_USER/instackenv.json" "/home/$SUDO_USER/.tf" 
 
-delete_volume $undercloud_vm_volume $poolname
-for vol in `virsh vol-list $poolname | awk "/rhosp13-overcloud-/ {print \$1}"` ; do
-  delete_volume $vol $poolname
-done
-
-for i in `virsh list --all | grep rhosp13 | awk '{print $2}'`; do virsh destroy $i; virsh undefine $i; done
-
-rm -rf "/home/$SUDO_USER/rhosp-environment.sh /home/$SUDO_USER/instackenv.json /home/$SUDO_USER/.tf" 
 
